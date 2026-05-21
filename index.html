@@ -1,9 +1,21 @@
+¡Me parece una evolución perfecta para llevarlo al aula! Un Trivial multiequipo fomenta mucho la participación y la competitividad sana.
+
+He rediseñado por completo el motor del juego para convertirlo en una experiencia para **4 equipos**. Aquí tienes las principales novedades que he implementado:
+
+1. **Panel de Mando Multiequipo:** Ahora hay un marcador superior donde cada uno de los 4 equipos tiene su propio contenedor de "quesitos" en miniatura. Un indicador visual señala claramente de quién es el turno en cada momento.
+2. **Sistema de Turnos:** Al igual que en el juego de mesa clásico, si un equipo acierta una pregunta de una categoría, consigue el quesito (si no lo tenía) **y conserva el turno** para seguir jugando. Si falla, el turno pasa automáticamente al siguiente equipo.
+3. **Banco de Preguntas Ampliado y Explicaciones Detalladas:** He extraído más contenido del examen para nutrir las cuatro categorías y he ampliado el cuadro de "feedback". Tras cada respuesta (acertada o fallada), aparece una pantalla con la **Aclaración Pedagógica**, explicando el "porqué" de la respuesta correcta de forma extendida para afianzar el contenido.
+4. **Victoria Competitiva:** El juego anuncia como ganador al primer equipo que logre completar su tablero con los 4 quesitos de colores.
+
+Aquí tienes el código completo y actualizado. Solo tienes que guardarlo en tu `index.html`:
+
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trivial LCL | 1º Bachillerato</title>
+    <title>Gran Trivial LCL | 1º Bachillerato</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     
@@ -13,330 +25,461 @@
             background-color: #0f172a;
             color: #f8fafc;
             user-select: none;
+            overflow-x: hidden;
         }
 
         .glass-panel {
             background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
         /* Colores Seguros de Categorías */
-        .cat-literatura { background-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); border-color: #60a5fa; color: white;}
-        .cat-morfologia { background-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); border-color: #34d399; color: white;}
-        .cat-pragmatica { background-color: #9333ea; box-shadow: 0 0 15px rgba(147, 51, 234, 0.5); border-color: #c084fc; color: white;}
-        .cat-tipologia { background-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.5); border-color: #f87171; color: white;}
+        .cat-lit { background: linear-gradient(135deg, #1e3a8a, #3b82f6); box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); border-color: #60a5fa; }
+        .cat-mor { background: linear-gradient(135deg, #064e3b, #10b981); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); border-color: #34d399; }
+        .cat-pra { background: linear-gradient(135deg, #581c87, #9333ea); box-shadow: 0 0 15px rgba(147, 51, 234, 0.4); border-color: #c084fc; }
+        .cat-tip { background: linear-gradient(135deg, #7f1d1d, #ef4444); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); border-color: #f87171; }
+
+        /* Colores de los Quesitos Obtenidos */
+        .q-lit-active { background-color: #3b82f6 !important; box-shadow: 0 0 10px #3b82f6; }
+        .q-mor-active { background-color: #10b981 !important; box-shadow: 0 0 10px #10b981; }
+        .q-pra-active { background-color: #9333ea !important; box-shadow: 0 0 10px #9333ea; }
+        .q-tip-active { background-color: #ef4444 !important; box-shadow: 0 0 10px #ef4444; }
+
+        .team-card {
+            transition: all 0.3s ease;
+            opacity: 0.6;
+            transform: scale(0.95);
+        }
+        
+        .team-card.active-turn {
+            opacity: 1;
+            transform: scale(1.05);
+            border-color: #f59e0b;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            z-index: 10;
+        }
 
         .quesito-slot {
-            width: 40px;
-            height: 40px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             border: 2px solid #334155;
             background-color: #1e293b;
             transition: all 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            font-weight: bold;
+            color: transparent;
         }
+
+        .quesito-slot.won { color: white; border-color: white; }
 
         .option-btn {
             transition: all 0.2s;
             border: 2px solid transparent;
         }
         .option-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
+            transform: translateX(10px);
             border-color: #cbd5e1;
             background-color: rgba(255,255,255,0.1);
         }
         
-        .correct-ans {
-            background-color: #059669 !important;
-            border-color: #34d399 !important;
-            color: white !important;
-        }
-        
-        .wrong-ans {
-            background-color: #dc2626 !important;
-            border-color: #f87171 !important;
-            color: white !important;
-        }
+        .correct-ans { background-color: #059669 !important; border-color: #34d399 !important; color: white !important; }
+        .wrong-ans { background-color: #dc2626 !important; border-color: #f87171 !important; color: white !important; }
 
-        @keyframes bounce-in {
-            0% { transform: scale(0); opacity: 0; }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); opacity: 1; }
+        @keyframes slide-in {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
         }
-        .animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .animate-slide-in { animation: slide-in 0.4s ease-out forwards; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]">
+<body class="min-h-screen flex flex-col items-center py-8 px-4 bg-gradient-to-br from-slate-900 to-black">
 
-    <div class="max-w-4xl w-full">
+    <div class="max-w-6xl w-full">
         
-        <div class="glass-panel rounded-3xl p-6 mb-8 flex flex-col md:flex-row items-center justify-between border-t-4 border-slate-500">
-            <div>
-                <h1 class="text-3xl md:text-4xl font-black text-white tracking-wide uppercase">Trivial LCL</h1>
-                <p class="text-slate-400 font-medium mt-1">1º Bachillerato - Repaso de Examen</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="teams-container">
             </div>
+
+        <div class="flex flex-col lg:flex-row gap-8">
             
-            <div class="mt-6 md:mt-0 flex flex-col items-center bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
-                <span class="text-sm uppercase tracking-widest text-slate-400 font-bold mb-3">Tus Quesitos</span>
-                <div class="flex gap-3" id="quesitos-container">
-                    <div id="q-lit" class="quesito-slot flex items-center justify-center text-xs font-bold text-transparent">L</div>
-                    <div id="q-mor" class="quesito-slot flex items-center justify-center text-xs font-bold text-transparent">M</div>
-                    <div id="q-pra" class="quesito-slot flex items-center justify-center text-xs font-bold text-transparent">P</div>
-                    <div id="q-tip" class="quesito-slot flex items-center justify-center text-xs font-bold text-transparent">T</div>
+            <div class="lg:w-1/3 flex flex-col gap-6">
+                <div class="glass-panel p-8 rounded-3xl text-center border-t-4 border-amber-500">
+                    <h1 class="text-4xl font-black uppercase text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500 mb-2">Trivial LCL</h1>
+                    <p class="text-slate-400 font-medium mb-6">Misión: 1º Bachillerato</p>
+                    
+                    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700">
+                        <p class="text-sm uppercase tracking-widest text-slate-400 font-bold mb-2">Turno Actual</p>
+                        <h2 id="current-team-display" class="text-2xl font-black text-amber-400 uppercase animate-pulse">Equipo 1</h2>
+                    </div>
+                    
+                    <div class="mt-6 text-left text-sm text-slate-300 space-y-2 bg-slate-900/50 p-4 rounded-xl">
+                        <p>🔹 <strong>Acertar:</strong> Ganas quesito y conservas el turno.</p>
+                        <p>🔸 <strong>Fallar:</strong> Pierdes el turno.</p>
+                        <p>🏆 <strong>Objetivo:</strong> Conseguir los 4 colores.</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div id="category-selector" class="glass-panel rounded-3xl p-8 text-center transition-all duration-300">
-            <h2 class="text-2xl font-bold mb-8 text-slate-200">Selecciona una categoría para jugar:</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <button onclick="Game.loadQuestion('literatura')" id="btn-lit" class="cat-literatura rounded-2xl p-6 text-xl font-black uppercase tracking-wider transform hover:scale-105 transition-all">
-                    Literatura
-                </button>
-                <button onclick="Game.loadQuestion('morfologia')" id="btn-mor" class="cat-morfologia rounded-2xl p-6 text-xl font-black uppercase tracking-wider transform hover:scale-105 transition-all">
-                    Morfología
-                </button>
-                <button onclick="Game.loadQuestion('pragmatica')" id="btn-pra" class="cat-pragmatica rounded-2xl p-6 text-xl font-black uppercase tracking-wider transform hover:scale-105 transition-all">
-                    Pragmática
-                </button>
-                <button onclick="Game.loadQuestion('tipologia')" id="btn-tip" class="cat-tipologia rounded-2xl p-6 text-xl font-black uppercase tracking-wider transform hover:scale-105 transition-all">
-                    Tipología Textual
-                </button>
-            </div>
-        </div>
-
-        <div id="question-area" class="hidden glass-panel rounded-3xl overflow-hidden transition-all duration-300">
-            <div id="q-header" class="p-4 text-center border-b-2">
-                <span id="q-category-name" class="font-black uppercase tracking-widest text-lg">Categoría</span>
-            </div>
-            
-            <div class="p-8 md:p-12">
-                <h3 id="q-text" class="text-2xl md:text-3xl font-medium leading-tight mb-10 text-center"></h3>
+            <div class="lg:w-2/3">
                 
-                <div id="options-container" class="grid grid-cols-1 gap-4">
+                <div id="category-selector" class="glass-panel rounded-3xl p-8 transition-all duration-300">
+                    <h2 class="text-2xl font-bold mb-8 text-center text-slate-200">Elige la categoría para jugar:</h2>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button onclick="Game.loadQuestion('lit')" id="btn-lit" class="cat-lit text-white rounded-2xl p-8 text-2xl font-black uppercase tracking-wider transform hover:scale-105 transition-all border-2">
+                            Literatura
+                        </button>
+                        <button onclick="Game.loadQuestion('mor')" id="btn-mor" class="cat-mor text-white rounded-2xl p-8 text-2xl font-black uppercase tracking-wider transform hover:scale-105 transition-all border-2">
+                            Morfología
+                        </button>
+                        <button onclick="Game.loadQuestion('pra')" id="btn-pra" class="cat-pra text-white rounded-2xl p-8 text-2xl font-black uppercase tracking-wider transform hover:scale-105 transition-all border-2">
+                            Pragmática
+                        </button>
+                        <button onclick="Game.loadQuestion('tip')" id="btn-tip" class="cat-tip text-white rounded-2xl p-8 text-2xl font-black uppercase tracking-wider transform hover:scale-105 transition-all border-2">
+                            Tipología Textual
+                        </button>
                     </div>
-                
-                <div id="feedback-area" class="hidden mt-8 p-6 rounded-2xl border text-center animate-bounce-in">
-                    <p id="feedback-title" class="text-2xl font-black uppercase mb-2"></p>
-                    <p id="feedback-explanation" class="text-slate-200 text-lg"></p>
-                    <button onclick="Game.returnToSelector()" class="mt-6 bg-white text-slate-900 px-8 py-3 rounded-xl font-bold uppercase hover:bg-slate-200 transition-colors">
-                        Continuar
+                </div>
+
+                <div id="question-area" class="hidden glass-panel rounded-3xl overflow-hidden transition-all duration-300 flex-col">
+                    <div id="q-header" class="p-6 text-center border-b-4">
+                        <span id="q-category-name" class="font-black uppercase tracking-widest text-2xl text-white drop-shadow-md">Categoría</span>
+                    </div>
+                    
+                    <div class="p-8 md:p-10 flex-grow">
+                        <div id="q-content">
+                            <h3 id="q-text" class="text-2xl md:text-3xl font-medium leading-relaxed mb-8 text-center"></h3>
+                            <div id="options-container" class="flex flex-col gap-4">
+                                </div>
+                        </div>
+                        
+                        <div id="feedback-area" class="hidden animate-slide-in">
+                            <div class="text-center mb-6">
+                                <h4 id="feedback-title" class="text-4xl font-black uppercase mb-2"></h4>
+                                <p id="turn-status-msg" class="text-lg font-bold text-slate-300"></p>
+                            </div>
+                            
+                            <div class="bg-slate-900/80 p-6 rounded-2xl border border-slate-700 shadow-inner mb-8">
+                                <h5 class="text-blue-400 font-bold mb-3 uppercase tracking-wider text-sm flex items-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                                    Aclaración Pedagógica
+                                </h5>
+                                <p id="feedback-explanation" class="text-slate-200 text-lg leading-relaxed"></p>
+                            </div>
+                            
+                            <div class="text-center">
+                                <button onclick="Game.processTurnEnd()" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-10 py-4 rounded-xl font-black text-xl uppercase hover:scale-105 transition-all shadow-lg">
+                                    Continuar Torneo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="victory-screen" class="hidden glass-panel rounded-3xl p-12 text-center mt-8 border-4 border-amber-500 shadow-[0_0_50px_rgba(245,158,11,0.5)]">
+                    <h2 class="text-6xl font-black text-amber-400 mb-6 uppercase tracking-widest drop-shadow-lg">¡VICTORIA!</h2>
+                    <p id="winner-name" class="text-4xl font-bold text-white mb-4"></p>
+                    <p class="text-xl text-slate-300 mb-10">Ha conseguido reunir los 4 colores del conocimiento lingüístico y literario.</p>
+                    
+                    <button onclick="location.reload()" class="bg-slate-700 hover:bg-slate-600 text-white px-8 py-4 rounded-xl font-bold text-xl uppercase transition-colors shadow-lg">
+                        Iniciar Nueva Partida
                     </button>
                 </div>
+
             </div>
         </div>
-
-        <div id="victory-screen" class="hidden glass-panel rounded-3xl p-12 text-center mt-8">
-            <h2 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-emerald-400 to-purple-400 mb-6">¡ENHORABUENA!</h2>
-            <p class="text-2xl text-slate-300 mb-8">Has conseguido los 4 quesitos y dominas los contenidos del examen de Lengua.</p>
-            <div class="flex justify-center gap-4 mb-10">
-                <div class="cat-literatura w-12 h-12 rounded-full shadow-lg"></div>
-                <div class="cat-morfologia w-12 h-12 rounded-full shadow-lg"></div>
-                <div class="cat-pragmatica w-12 h-12 rounded-full shadow-lg"></div>
-                <div class="cat-tipologia w-12 h-12 rounded-full shadow-lg"></div>
-            </div>
-            <button onclick="location.reload()" class="bg-slate-700 hover:bg-slate-600 text-white px-8 py-4 rounded-xl font-bold text-xl uppercase transition-colors">
-                Jugar de nuevo
-            </button>
-        </div>
-
     </div>
 
     <script>
         const DB = {
-            literatura: {
-                id: 'lit', name: 'Literatura', colorClass: 'cat-literatura',
+            lit: {
+                id: 'lit', name: 'Literatura', colorClass: 'cat-lit',
                 questions: [
                     {
-                        q: "En el cuadro del examen debes incluir cuatro autores y obras. ¿Qué movimiento literario del siglo XIX rompe con la razón y exalta el 'yo' y la libertad?",
-                        options: ["La Ilustración", "El Neoclasicismo", "El Romanticismo", "El Realismo"],
+                        q: "En la tabla de la 1ª pregunta del examen, debes incluir cuatro autores y obras. ¿Qué movimiento del siglo XIX exalta la libertad, el pesimismo y la rebeldía?",
+                        options: ["El Barroco", "El Renacimiento", "El Romanticismo", "El Realismo"],
                         correct: 2,
-                        explanation: "El Romanticismo es el movimiento clave que se pide en la primera pregunta del examen."
+                        explanation: "El Romanticismo (s. XIX) rompe con la rigidez neoclásica. Autores como Bécquer, Rosalía de Castro o Espronceda reflejan ese ansia de libertad y ese choque trágico entre los ideales y la realidad."
+                    },
+                    {
+                        q: "¿Cuál de estos autores encajaría perfectamente en el recuadro del Romanticismo solicitado en el examen?",
+                        options: ["Garcilaso de la Vega", "José de Espronceda", "Antonio Machado", "Federico García Lorca"],
+                        correct: 1,
+                        explanation: "José de Espronceda, autor de la 'Canción del pirata' o 'El estudiante de Salamanca', es uno de los máximos exponentes de la poesía narrativa y exaltada del Romanticismo español."
                     }
                 ]
             },
-            morfologia: {
-                id: 'mor', name: 'Morfología', colorClass: 'cat-morfologia',
+            mor: {
+                id: 'mor', name: 'Morfología', colorClass: 'cat-mor',
                 questions: [
                     {
-                        q: "El 'cortafuegos heurístico' detectó una anomalía. ¿Cuál es la prueba clave para diferenciar si 'quinceañero' es parasintética frente a 'incansable' que es derivada?",
+                        q: "El cortafuegos detecta una anomalía: 'quinceañero' frente a 'incansable'. ¿Por qué 'quinceañero' es parasintética?",
                         options: [
-                            "Contar el número de sílabas",
-                            "Eliminar el prefijo o el sufijo y comprobar si la palabra resultante existe sola de forma independiente",
-                            "Buscar si la palabra tiene un lexema verbal oculto",
-                            "Mirar si ambas tienen afijos flexivos de género y número"
+                            "Porque tiene prefijo y sufijo.",
+                            "Porque se forma por composición (quince + año) y derivación (-ero) simultáneamente, sin que exista 'añero'.",
+                            "Porque deriva de un verbo (añear).",
+                            "Porque es un neologismo reciente."
                         ],
                         correct: 1,
-                        explanation: "Si quitas 'quince-' a quinceañero, 'añero' no existe. Por tanto, es parasintética (se unen composición y derivación a la vez). Si quitas 'in-' a incansable, 'cansable' sí existe."
+                        explanation: "La prueba clave de la parasíntesis es que no existe el paso intermedio. Si quitamos 'quince-', la palabra 'añero' no existe por sí sola en la lengua. En cambio, en 'incansable', si quitamos 'in-', 'cansable' sí existe."
                     },
                     {
-                        q: "Debes segmentar 'Inmortalidad'. ¿Cuál es el desglose correcto de sus monemas?",
+                        q: "Segmenta la palabra 'Picapedrero' (pregunta 2 del examen) indicando sus lexemas.",
                         options: [
-                            "In-mort-al-idad",
-                            "In-mortal-idad",
-                            "Inmorta-lidad",
-                            "Inmort-al-i-dad"
+                            "Pica- (lex) + pedr- (lex) + -ero (suf)",
+                            "Pi- (pref) + capedr- (lex) + -ero (suf)",
+                            "Pic- (lex) + a (vocal) + pedr- (lex) + -er (suf) + -o (morf. flex)",
+                            "Picapedr- (lex) + -ero (suf)"
                         ],
                         correct: 0,
-                        explanation: "Prefijo (in-), Lexema (mort-), Sufijo derivativo (-al), Sufijo derivativo (-idad)."
+                        explanation: "Es una palabra parasintética formada por dos lexemas: 'pica' (del verbo picar) y 'pedr-' (piedra), a los que se añade simultáneamente el sufijo derivativo '-ero' (oficio)."
+                    },
+                    {
+                        q: "¿Cómo clasificarías el proceso de formación de la palabra 'Sordomudo' que aparece en el examen?",
+                        options: ["Simple", "Derivada", "Compuesta", "Parasintética"],
+                        correct: 2,
+                        explanation: "Es una palabra compuesta, ya que está formada por la unión de dos lexemas independientes que ya existen por sí solos ('sordo' y 'mudo') y se unen para crear un nuevo significado."
                     }
                 ]
             },
-            pragmatica: {
-                id: 'pra', name: 'Pragmática', colorClass: 'cat-pragmatica',
+            pra: {
+                id: 'pra', name: 'Pragmática', colorClass: 'cat-pra',
                 questions: [
                     {
-                        q: "En el correo al Director de la Biblioteca, el emisor empieza con '¡Eh, tú!'. ¿Qué principio comunicativo se viola flagrantemente?",
+                        q: "El emisor del correo escribe: '¡Eh, tú! Pásame los archivos'. ¿Qué principio comunicativo vulnera flagrantemente?",
                         options: [
-                            "El principio de cooperación de Grice",
-                            "La deixis espacial",
-                            "El registro formal y el principio de cortesía (ataque a la imagen negativa)",
-                            "La función poética del lenguaje"
+                            "La cohesión textual",
+                            "La deixis temporal",
+                            "El principio de cortesía y el registro formal",
+                            "La máxima de cantidad de Grice"
                         ],
                         correct: 2,
-                        explanation: "El uso de un registro tan coloquial e imperativo ataca directamente la imagen institucional y la cortesía esperable hacia un cargo público."
+                        explanation: "Vulnera el principio de cortesía al atacar la 'Imagen Negativa' del director de la Biblioteca Nacional. Utiliza un registro coloquial, imperativos directos y tuteo, lo cual es totalmente inadecuado para un contexto institucional."
                     },
                     {
-                        q: "El emisor intenta manipular diciendo: 'un famoso influencer dijo ayer que las bibliotecas ya no sirven'. ¿Qué falacia argumentativa es esta?",
+                        q: "Para atenuar la agresión pragmática de 'Pásame los archivos', ¿qué estrategia de cortesía (pregunta 4a) deberías usar?",
                         options: [
-                            "Ad hominem (ataque personal)",
-                            "Ad verecundiam o de Falsa Autoridad",
-                            "Hombre de paja",
-                            "Petición de principio"
+                            "Usar letras mayúsculas",
+                            "Usar el condicional, preguntas indirectas o despersonalización",
+                            "Añadir más signos de exclamación",
+                            "Usar deixis catafórica"
                         ],
                         correct: 1,
-                        explanation: "Se basa en el prestigio o la fama de alguien (un influencer) que no es un experto real en la materia (biblioteconomía) para validar un argumento falso."
+                        explanation: "Las estrategias de atenuación sintáctica suavizan la orden. En lugar de 'Pásame', sería adecuado usar fórmulas como: 'Le rogaría que me enviase...', '¿Sería posible obtener...?', protegiendo así la imagen del receptor."
+                    },
+                    {
+                        q: "En el correo se lee: 'Los necesito hoy'. ¿Qué tipo de mecanismo de cohesión es la palabra resaltada en negrita?",
+                        options: ["Anáfora", "Catáfora", "Deixis temporal", "Deixis personal"],
+                        correct: 2,
+                        explanation: "La palabra 'hoy' es una deixis temporal. No señala a una palabra anterior del texto (como haría una anáfora), sino que señala directamente a las coordenadas temporales del contexto de enunciación (el día en que se escribe el correo)."
                     }
                 ]
             },
-            tipologia: {
-                id: 'tip', name: 'Tipología Textual', colorClass: 'cat-tipologia',
+            tip: {
+                id: 'tip', name: 'Tipología Textual', colorClass: 'cat-tip',
                 questions: [
                     {
-                        q: "Para redactar el texto argumentativo, se te exige una 'estructura deductiva'. ¿Qué significa esto?",
+                        q: "La pregunta 6 pide un texto argumentativo con 'estructura deductiva'. ¿Dónde debes colocar tu tesis?",
                         options: [
-                            "Que la tesis debe aparecer como conclusión al final del texto",
-                            "Que no debe haber argumentos en contra",
-                            "Que la tesis debe aparecer claramente expuesta al principio del texto",
-                            "Que debe usar muchas metáforas para deducir el significado"
-                        ],
-                        correct: 2,
-                        explanation: "En la estructura deductiva, partimos de la idea general o Tesis al inicio, y luego la desarrollamos o demostramos con argumentos concretos."
-                    },
-                    {
-                        q: "El examen te pide incluir una figura retórica para darle fuerza al argumento sobre la libertad. Si escribes: 'La ignorancia es una cárcel invisible', ¿qué figura has usado?",
-                        options: [
-                            "Metáfora",
-                            "Comparación o Símil",
-                            "Hipérbole",
-                            "Hipérbaton"
+                            "Al principio del texto, claramente expuesta.",
+                            "Oculta entre las metáforas.",
+                            "Al final, como conclusión tras los argumentos.",
+                            "En el medio, uniendo dos párrafos."
                         ],
                         correct: 0,
-                        explanation: "Es una metáfora, ya que identificas un término real (ignorancia) con uno imaginario (cárcel) sin usar nexos como 'cual' o 'como'."
+                        explanation: "La estructura deductiva (o analizante) parte de la idea principal o Tesis al inicio. A partir de esa afirmación general, el texto se desarrolla deduciendo argumentos, ejemplos o datos concretos que la apoyan."
+                    },
+                    {
+                        q: "Si en tu texto argumentativo sobre la literatura escribes 'Los libros son faros en la oscuridad', ¿qué figura retórica exigida en el examen has usado?",
+                        options: ["Hipérbole", "Comparación", "Metáfora", "Paradoja"],
+                        correct: 2,
+                        explanation: "Has usado una Metáfora. Estás identificando un Término Real (libros) con un Término Imaginario (faros) por una relación de semejanza (ambos arrojan luz/conocimiento), sin usar enlaces comparativos como 'parecen' o 'como'."
+                    },
+                    {
+                        q: "Te piden usar al menos dos conectores discursivos. ¿Cuáles de los siguientes son conectores adecuados para un texto argumentativo formal?",
+                        options: [
+                            "Y, o, pero, porque.",
+                            "Pues, o sea, en plan, bueno.",
+                            "En primer lugar, sin embargo, por consiguiente.",
+                            "Había una vez, de repente, finalmente."
+                        ],
+                        correct: 2,
+                        explanation: "Los conectores lógicos y argumentativos organizan el discurso. 'En primer lugar' ordena, 'sin embargo' introduce contraargumentos y 'por consiguiente' marca una consecuencia o deducción."
                     }
                 ]
             }
         };
 
         const Game = {
-            progress: { lit: false, mor: false, pra: false, tip: false },
+            teams: [
+                { id: 0, name: "Equipo 1", q: { lit: false, mor: false, pra: false, tip: false } },
+                { id: 1, name: "Equipo 2", q: { lit: false, mor: false, pra: false, tip: false } },
+                { id: 2, name: "Equipo 3", q: { lit: false, mor: false, pra: false, tip: false } },
+                { id: 3, name: "Equipo 4", q: { lit: false, mor: false, pra: false, tip: false } }
+            ],
+            currentTurn: 0,
             currentCat: null,
             currentQ: null,
+            lastAnswerCorrect: false,
+
+            init() {
+                this.renderScoreboard();
+                this.updateTurnUI();
+            },
+
+            renderScoreboard() {
+                const container = document.getElementById('teams-container');
+                container.innerHTML = '';
+                
+                this.teams.forEach((team, index) => {
+                    const card = document.createElement('div');
+                    card.id = `team-card-${index}`;
+                    card.className = `team-card glass-panel p-4 rounded-2xl border-2 border-slate-600 flex flex-col items-center`;
+                    
+                    card.innerHTML = `
+                        <span class="font-black text-lg mb-3 uppercase tracking-wider">${team.name}</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="quesito-slot ${team.q.lit ? 'won q-lit-active' : ''}">L</div>
+                            <div class="quesito-slot ${team.q.mor ? 'won q-mor-active' : ''}">M</div>
+                            <div class="quesito-slot ${team.q.pra ? 'won q-pra-active' : ''}">P</div>
+                            <div class="quesito-slot ${team.q.tip ? 'won q-tip-active' : ''}">T</div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            },
+
+            updateTurnUI() {
+                document.querySelectorAll('.team-card').forEach((card, idx) => {
+                    if (idx === this.currentTurn) {
+                        card.classList.add('active-turn');
+                        card.classList.remove('opacity-60', 'scale-95');
+                    } else {
+                        card.classList.remove('active-turn');
+                        card.classList.add('opacity-60', 'scale-95');
+                    }
+                });
+
+                document.getElementById('current-team-display').innerText = this.teams[this.currentTurn].name;
+                
+                // Actualizar botones de categoría (desactivar si el equipo ya tiene ese quesito)
+                const teamQ = this.teams[this.currentTurn].q;
+                Object.keys(teamQ).forEach(cat => {
+                    const btn = document.getElementById(`btn-${cat}`);
+                    if (teamQ[cat]) {
+                        btn.classList.add('opacity-30', 'cursor-not-allowed', 'grayscale');
+                        btn.classList.remove('hover:scale-105');
+                        btn.disabled = true;
+                    } else {
+                        btn.classList.remove('opacity-30', 'cursor-not-allowed', 'grayscale');
+                        btn.classList.add('hover:scale-105');
+                        btn.disabled = false;
+                    }
+                });
+            },
 
             loadQuestion(catKey) {
+                // Verificar si el botón está deshabilitado
+                if(document.getElementById(`btn-${catKey}`).disabled) return;
+
                 this.currentCat = DB[catKey];
-                
-                // Coger pregunta aleatoria de la categoría
                 const qList = this.currentCat.questions;
                 this.currentQ = qList[Math.floor(Math.random() * qList.length)];
 
-                // Interfaz
                 document.getElementById('category-selector').classList.add('hidden');
+                document.getElementById('q-content').classList.remove('hidden');
+                document.getElementById('feedback-area').classList.add('hidden');
                 const qArea = document.getElementById('question-area');
                 qArea.classList.remove('hidden');
+                qArea.classList.add('flex');
                 
-                // Estilar cabecera
                 const qHeader = document.getElementById('q-header');
-                qHeader.className = `p-4 text-center border-b-2 ${this.currentCat.colorClass}`;
+                qHeader.className = `p-6 text-center border-b-4 ${this.currentCat.colorClass}`;
                 document.getElementById('q-category-name').innerText = this.currentCat.name;
                 
                 document.getElementById('q-text').innerText = this.currentQ.q;
                 
-                // Generar botones
                 const optContainer = document.getElementById('options-container');
                 optContainer.innerHTML = '';
                 
                 this.currentQ.options.forEach((opt, index) => {
                     const btn = document.createElement('button');
-                    btn.className = 'option-btn bg-slate-800 text-slate-200 p-4 rounded-xl text-left text-lg font-medium';
+                    btn.className = 'option-btn bg-slate-800 text-slate-200 p-5 rounded-xl text-left text-xl font-medium border-2 border-slate-600 shadow-md';
                     btn.innerText = opt;
                     btn.onclick = () => this.checkAnswer(index, btn);
                     optContainer.appendChild(btn);
                 });
-
-                document.getElementById('feedback-area').classList.add('hidden');
             },
 
             checkAnswer(selectedIndex, btnElement) {
-                // Deshabilitar todos los botones
                 const buttons = document.querySelectorAll('.option-btn');
                 buttons.forEach(b => b.disabled = true);
 
-                const isCorrect = (selectedIndex === this.currentQ.correct);
+                this.lastAnswerCorrect = (selectedIndex === this.currentQ.correct);
                 const feedbackArea = document.getElementById('feedback-area');
+                const qContent = document.getElementById('q-content');
                 const fTitle = document.getElementById('feedback-title');
                 const fExp = document.getElementById('feedback-explanation');
+                const turnMsg = document.getElementById('turn-status-msg');
 
-                if (isCorrect) {
-                    btnElement.classList.add('correct-ans');
-                    fTitle.innerText = "¡CORRECTO!";
-                    fTitle.className = "text-3xl font-black uppercase mb-2 text-emerald-400";
-                    feedbackArea.className = "mt-8 p-6 rounded-2xl border border-emerald-500/50 bg-emerald-900/20 text-center animate-bounce-in block";
+                qContent.classList.add('hidden'); // Ocultar pregunta y opciones
+
+                if (this.lastAnswerCorrect) {
+                    fTitle.innerText = "¡RESPUESTA CORRECTA!";
+                    fTitle.className = "text-4xl font-black uppercase mb-2 text-emerald-400";
+                    turnMsg.innerText = "¡Ganas el quesito y conservas el turno!";
+                    turnMsg.className = "text-xl font-bold text-emerald-300";
                     
-                    // Conseguir el quesito
-                    this.progress[this.currentCat.id] = true;
-                    const quesito = document.getElementById(`q-${this.currentCat.id}`);
-                    quesito.className = `quesito-slot flex items-center justify-center text-xs font-bold text-white shadow-lg ${this.currentCat.colorClass}`;
+                    // Otorgar quesito
+                    this.teams[this.currentTurn].q[this.currentCat.id] = true;
+                    this.renderScoreboard(); // Actualizar marcador superior visualmente
                     
                 } else {
-                    btnElement.classList.add('wrong-ans');
-                    // Marcar la correcta
-                    buttons[this.currentQ.correct].classList.add('correct-ans', 'opacity-50');
-                    
-                    fTitle.innerText = "INCORRECTO";
-                    fTitle.className = "text-3xl font-black uppercase mb-2 text-red-400";
-                    feedbackArea.className = "mt-8 p-6 rounded-2xl border border-red-500/50 bg-red-900/20 text-center animate-bounce-in block";
+                    fTitle.innerText = "RESPUESTA INCORRECTA";
+                    fTitle.className = "text-4xl font-black uppercase mb-2 text-red-500";
+                    turnMsg.innerText = "¡Oh, no! El turno pasa al siguiente equipo.";
+                    turnMsg.className = "text-xl font-bold text-red-300";
                 }
 
-                fExp.innerText = this.currentQ.explanation;
+                fExp.innerHTML = this.currentQ.explanation;
                 feedbackArea.classList.remove('hidden');
             },
 
-            returnToSelector() {
+            processTurnEnd() {
                 if(this.checkVictory()) {
                     document.getElementById('question-area').classList.add('hidden');
-                    document.getElementById('victory-screen').classList.remove('hidden');
+                    document.getElementById('question-area').classList.remove('flex');
+                    const vicScreen = document.getElementById('victory-screen');
+                    vicScreen.classList.remove('hidden');
+                    document.getElementById('winner-name').innerText = this.teams[this.currentTurn].name;
                 } else {
                     document.getElementById('question-area').classList.add('hidden');
+                    document.getElementById('question-area').classList.remove('flex');
                     document.getElementById('category-selector').classList.remove('hidden');
                     
-                    // Deshabilitar el botón de la categoría si ya se consiguió
-                    if(this.progress[this.currentCat.id]) {
-                        const btnId = `btn-${this.currentCat.id}`;
-                        const catBtn = document.getElementById(btnId);
-                        catBtn.classList.add('opacity-30', 'cursor-not-allowed');
-                        catBtn.classList.remove('hover:scale-105');
-                        catBtn.onclick = null;
+                    // Si falló, pasamos turno. Si acertó, se queda en el mismo.
+                    if(!this.lastAnswerCorrect) {
+                        this.currentTurn = (this.currentTurn + 1) % 4;
                     }
+                    this.updateTurnUI();
                 }
             },
 
             checkVictory() {
-                return Object.values(this.progress).every(status => status === true);
+                const currentTeamQ = this.teams[this.currentTurn].q;
+                return Object.values(currentTeamQ).every(status => status === true);
             }
         };
+
+        // Iniciar el juego al cargar
+        window.onload = () => Game.init();
     </script>
 </body>
 </html>
+
+```
